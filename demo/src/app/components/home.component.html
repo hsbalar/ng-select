@@ -10,11 +10,15 @@
         <div class="select-value">Select value: <code>{{singleSelectValue}}</code></div>
         <ng-select
             [options]="countries"
+            [disableClientFilter]="true"
+            (searchInputChanged)="onSearchInputChanged($event)"
+            (optionsListScrollDown)="onOptionsListScrollDown()"
             [(ngModel)]="singleSelectValue">
         </ng-select>
         <h3>Multiple select</h3>
         <div class="select-value">Select value: <code>{{multiSelectValue}}</code></div>
-        <ng-select                                                                                                      [multiple]="true"
+        <ng-select
+            [multiple]="true"
             [options]="countries"
             [(ngModel)]="multiSelectValue">
         </ng-select>

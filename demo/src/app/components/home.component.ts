@@ -17,4 +17,12 @@ export class Home {
     constructor(
         private optionService: OptionService
     ) {}
+
+    onOptionsListScrollDown() {
+        console.log('load remote data');
+    }
+
+    onSearchInputChanged(value: any) {
+        console.log('search value :', value);
+    }
 }

@@ -1,5 +1,9 @@
 import {Component, HostListener, Input, OnChanges, OnInit, Output, EventEmitter, ExistingProvider, ViewChild, ViewEncapsulation, forwardRef, ElementRef, SimpleChange, SimpleChanges, ContentChild, TemplateRef} from '@angular/core';
 import {NG_VALUE_ACCESSOR, ControlValueAccessor} from '@angular/forms';
+import 'rxjs/add/operator/distinctUntilChanged';
+import 'rxjs/add/operator/debounceTime';
+import { Subject } from 'rxjs/Subject';
+
 import {STYLE} from './select.component.css';
 import {TEMPLATE} from './select.component.html';
 import {SelectDropdownComponent} from './select-dropdown.component';
@@ -41,8 +45,11 @@ export class SelectComponent implements ControlValueAccessor, OnChanges, OnInit 
     @Input() placeholder: string = '';
     @Input() filterPlaceholder: string = '';
     @Input() label: string = '';
+    @Input() disableClientFilter: boolean = false;
 
     // Output events.
+    @Output() searchInputChanged = new EventEmitter<string>();
+    @Output() optionsListScrollDown = new EventEmitter<null>();
     @Output() opened = new EventEmitter<null>();
     @Output() closed = new EventEmitter<null>();
     @Output() selected = new EventEmitter<IOption>();
@@ -83,6 +90,8 @@ export class SelectComponent implements ControlValueAccessor, OnChanges, OnInit 
     private onChange = (_: any) => {};
     private onTouched = () => {};
 
+    inputFilterChanged: Subject<string> = new Subject<string>();
+
     constructor(
         private hostElement: ElementRef
     ) {}
@@ -91,6 +100,12 @@ export class SelectComponent implements ControlValueAccessor, OnChanges, OnInit 
 
     ngOnInit() {
         this.placeholderView = this.placeholder;
+        this.inputFilterChanged
+            .debounceTime(300)
+            .distinctUntilChanged()
+            .subscribe(newValue => {
+                this.filter(newValue);
+            });
     }
 
     ngOnChanges(changes: SimpleChanges) {
@@ -159,7 +174,7 @@ export class SelectComponent implements ControlValueAccessor, OnChanges, OnInit 
     }
 
     onFilterInput(term: string) {
-        this.filter(term);
+        this.inputFilterChanged.next(term);
     }
 
     onSingleFilterKeydown(event: any) {
@@ -183,6 +198,10 @@ export class SelectComponent implements ControlValueAccessor, OnChanges, OnInit 
     onDeselectOptionClick(option: Option) {
         this.clearClicked = true;
         this.deselectOption(option);
+    }
+
+    onOptionsListScrollDown() {
+        this.optionsListScrollDown.emit();
     }
 
     /** API. **/
@@ -388,12 +407,16 @@ export class SelectComponent implements ControlValueAccessor, OnChanges, OnInit 
             }
             this.updateFilterWidth();
         }
-        setTimeout(() => {
-            let hasShown: boolean = this.optionList.filter(term);
-            if (!hasShown) {
-                this.noOptionsFound.emit(term);
-            }
-        });
+        if (this.disableClientFilter) {
+            this.searchInputChanged.emit(term);
+        } else {
+            setTimeout(() => {
+                let hasShown: boolean = this.optionList.filter(term);
+                if (!hasShown) {
+                    this.noOptionsFound.emit(term);
+                }
+            });
+        }
     }
 
     private clearFilterInput() {

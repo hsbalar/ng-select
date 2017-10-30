@@ -32,6 +32,7 @@ export class SelectDropdownComponent
     @Output() singleFilterFocus = new EventEmitter<null>();
     @Output() singleFilterInput = new EventEmitter<string>();
     @Output() singleFilterKeydown = new EventEmitter<any>();
+    @Output() optionsListScrollDown = new EventEmitter<null>();
 
     @ViewChild('filterInput') filterInput: any;
     @ViewChild('optionsList') optionsList: any;
@@ -88,6 +89,14 @@ export class SelectDropdownComponent
 
     onOptionClick(option: Option) {
         this.optionClicked.emit(option);
+    }
+
+    onScrollDown() {
+      let element = this.optionsList.nativeElement;
+      let atBottom = element.scrollHeight - element.scrollTop - 1000 < element.clientHeight;
+      if (atBottom) {
+          this.optionsListScrollDown.emit();
+      }
     }
 
     /** Initialization. **/
